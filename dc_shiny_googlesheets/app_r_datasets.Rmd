@@ -1,0 +1,103 @@
+---
+title: "R-datasets"
+runtime: shiny
+output:
+  flexdashboard::flex_dashboard:
+    horizontal_layout: fill
+    navbar:
+    - align: right
+      href: https://github.com/maurolepore
+      icon: fa-gavel
+    - align: right
+      href: https://github.com/maurolepore
+      icon: fa-github
+    orientation: columns
+    social: menu
+    source_code: embed
+    theme: united
+    vertical_layout: scroll
+---
+
+```{r global, include=FALSE}
+library(flexdashboard)
+library(googlesheets)
+library(DT)
+library(shiny)
+library(stringr)
+```
+
+```{r}
+# Register datasets (dts) worksheet (ws)
+datasets_worksheet <- gs_title("datasets")
+
+# List all datasets (dts) names (nms) 
+available_datasets <- gs_ws_ls(datasets_worksheet)
+```
+
+Inputs {.sidebar}
+========================================================================
+
+```{r}
+helpText("Choose data set:")
+selectInput("dataset", NULL, choices = available_datasets)
+df_in <- reactive({
+  req(input$dataset)
+  gs_read(datasets_worksheet, ws = input$dataset)
+})
+
+downloadHandler(
+  filename = function() {
+    paste(input$dataset, ".csv", sep = "")
+  },
+  content = function(file) {
+    readr::write_csv(df_in(), file)
+  }
+)
+
+renderPrint(
+  cat(
+    paste0(
+      str_pad(1:ncol(df_in()), 2, pad = " "), ": ", names(df_in()), "\n"
+    ),
+    sep = ""
+  )
+)
+```
+
+```{r}
+helpText("Display columns:")
+fluidRow(
+  column(6, numericInput("var_pos_min", "min", 1)),
+  column(6, numericInput("var_pos_max", "max", 6))
+)
+
+helpText("Download these columns:")
+df_selected <- reactive({
+  req(input$dataset)
+  df_in()[input$var_pos_min:input$var_pos_max]
+})
+downloadHandler(
+  filename = function() {
+    paste(input$dataset, "_selected", ".csv", sep = "")
+  },
+  content = function(file) {
+    readr::write_csv(df_selected(), file)
+  }
+)
+```
+
+Viewer
+========================================================================
+
+```{r}
+renderPrint(cat("Get help with: `?", input$dataset, "`", sep = ""))
+
+renderDataTable({
+  req(input$dataset)
+  DT::datatable(
+    df_selected(),
+    filter = 'top',
+    options = list(class = 'nowrap display', pageLength = 10),
+  )
+})
+```

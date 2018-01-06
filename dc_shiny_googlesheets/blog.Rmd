@@ -1,0 +1,93 @@
+---
+title: RLadiesDC
+output:
+  rmarkdown::html_document:
+    toc: true
+    toc_depth: 6
+---
+
+```{r}
+# ---
+# title: Shiny - googlesheets Integration
+# author: Mauro Lepore
+# date: '2018-01-06'
+# slug: shiny-googlesheets-integration
+# categories:
+#   - R
+# tags:
+#   - R
+#   - Shiny
+#   - googlesheets
+#   - RLadiesDC
+#   - meetup
+# ---
+```
+
+
+```{r setup, echo = FALSE, message=FALSE, warning=FALSE}
+# hadley's settings
+set.seed(1014)
+options(digits = 3)
+
+knitr::opts_chunk$set(
+  eval = FALSE,
+  echo = TRUE,  # {mine}
+  comment = "#>",
+  collapse = TRUE,
+  cache = TRUE,
+  out.width = "70%",
+  fig.align = "center",
+  fig.width = 6,
+  fig.asp = 0.618,  # 1 / phi
+  fig.show = "hold",
+  rows.print = 3  # {mine}
+)
+```
+
+# Overview
+
+This post shows one workflow that integrates two packages: [__shiny__](https://github.com/rstudio/shiny) and [__googlesheets__](https://github.com/jennybc/googlesheets). It is inspired by [this meetup](https://www.meetup.com/rladies-dc/events/245819613/) of [\@RLadiesDC](https://twitter.com/RLadiesDC), led by [Kelly O'Briant](https://twitter.com/b23kelly).
+
+My goal is to build a web application to explore the dataframes of the __datasets__ package. Each dataset I'll push into a spreadsheet, and all spreadsheets will live in a single worksheet, called _datasets_. To save time I won't work the entire dataframes but only with their first few rows (their head).
+
+```{r pkg}
+library(googlesheets)
+library(tidyverse)
+library(datasets)
+```
+
+# Choose datasets
+
+```{r dataframes}
+all_nms <- ls("package:datasets")
+all_dts <- all_nms %>% map(get) %>% set_names(all_nms)
+dfm_list <- all_dts %>% keep(is.data.frame) %>% map(head)
+```
+
+# Create a worksheet and push each dataframe to one spreadsheets
+
+```{r datasets_spreadsheet}
+# Create a worksheet with an empty spreadsheet
+dts <- gs_new("datasets")
+```
+
+```{r}
+map2(
+  .x = dfm_list, .y = names(dfm_list),
+  ~gs_ws_new(dts, ws_title = .y, input = .x)
+)
+# Delete the empty spreadsheet created before
+dts <- gs_ws_delete(dts, ws = 1)
+```
+
+Confirm that dataset is now lives one of my Google Sheets.
+
+```{r}
+gs_ls()[1, ]
+```
+
+Now I'm ready to build my shiny app.
+
+
+
+
