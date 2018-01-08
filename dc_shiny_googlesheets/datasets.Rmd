@@ -9,7 +9,7 @@ output:
       href: https://github.com/maurolepore
       icon: fa-gavel
     - align: right
-      href: https://github.com/maurolepore
+      href: https://github.com/maurolepore/rladies/blob/master/dc_shiny_googlesheets/app_r_datasets.Rmd
       icon: fa-github
     orientation: columns
     social: menu
